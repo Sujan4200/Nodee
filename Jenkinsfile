@@ -1,36 +1,69 @@
-node {
-    
-	
+pipeline { 
 
-    env.AWS_ECR_LOGIN=true
-    def newApp
-    def registry = 'gustavoapolinario/microservices-node-todo-frontend'
-    def registryCredential = 'dockerhub'
-	
-	stage('Git') {
-		git 'https://github.com/gustavoapolinario/node-todo-frontend'
-	}
-	stage('Build') {
-		sh 'npm install'
-	}
-	stage('Test') {
-		sh 'npm test'
-	}
-	stage('Building image') {
-        docker.withRegistry( 'https://' + registry, registryCredential ) {
-		    def buildName = registry + ":$BUILD_NUMBER"
-			newApp = docker.build buildName
-			newApp.push()
-        }
-	}
-	stage('Registring image') {
-        docker.withRegistry( 'https://' + registry, registryCredential ) {
-    		newApp.push 'latest2'
-        }
-	}
-    stage('Removing image') {
-        sh "docker rmi $registry:$BUILD_NUMBER"
-        sh "docker rmi $registry:latest"
+    environment { 
+
+        registry = "niklaus07/node" 
+
+        registryCredential = 'dockerhub' 
+
+        dockerImage = '' 
+
     }
-    
+
+    agent any
+
+    stages { 
+
+        stage('Cloning our Git') { 
+
+            steps { 
+
+                git 'git@github.com:Sujan4200/Nodee.git' 
+            }
+
+        } 
+
+        stage('Building our image') { 
+
+            steps { 
+
+                script { 
+
+                    dockerImage = docker.build registry + ":$BUILD_NUMBER" 
+
+                }
+
+            } 
+
+        }
+
+        stage('Deploy our image') { 
+
+            steps { 
+
+                script { 
+
+                    docker.withRegistry( '', registryCredential ) { 
+                       dockerImage.push() 
+
+                    }
+
+                } 
+
+            }
+
+        } 
+
+        stage('Cleaning up') { 
+
+            steps { 
+
+                sh "docker rmi $registry:$BUILD_NUMBER" 
+
+            }
+
+        } 
+
+    }
+
 }
